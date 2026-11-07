@@ -1,7 +1,8 @@
 Inventario de caches | Windows API nativa
 GetLogicalProcessorInformationEx (RelationCache)
-L1 Data: 32 ou 48 KiB; linhas de 64 B
-L1 Instruction: 32 ou 64 KiB; linhas de 64 B
-L2 Unified: 1.280 ou 2.048 KiB; linhas de 64 B
-L3 Unified: 12.288 KiB; linhas de 64 B
+Capacidades variam entre tipos de nucleo.
+L1 Data: 32 KiB (8-way) ou 48 KiB (12-way), linha de 64 B
+L1 Instruction: 32 ou 64 KiB (8-way), linha de 64 B
+L2 Unified: 1.280 KiB (10-way) ou 2.048 KiB (16-way)
+L3 Unified: 12.288 KiB (12-way), linha de 64 B
 L1 separada entre instrucoes e dados.

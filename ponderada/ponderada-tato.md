@@ -12,7 +12,7 @@ Contando apenas letras, Nicole tem 6 letras. O nome completo tem 6 + 6 + 5 + 5 =
 | Taxa de falta L1 (m) | 3% + 0,5% x 6 | 6% |
 | Buffer circular (N) | 3 + (2 mod 5) | 5 |
 
-## Parte A — problema técnico
+## Parte A: problema técnico
 
 ### A1. Arquitetura e memória
 
@@ -48,9 +48,9 @@ Com o DSP, a H atende ao limite com 2,725 ms de margem no modelo.
 
 Para produção, escolheria a H com DSP: a V também atende no modelo, mas a H com DSP tem mais margem e não recebe interrupções de um sistema operacional.
 
-A V precisa de cache porque sua DRAM externa custa 120 ciclos em cada falta; a cache reduz o tempo médio desse acesso. Como instruções e dados passam pela mesma memória, eles disputam o caminho de Von Neumann. A H usa SRAM interna de um ciclo e caminhos separados de instruções e dados, então não precisa de cache para cumprir esse papel.
+A V precisa de cache porque sua DRAM externa custa 120 ciclos em cada falta. A cache reduz o tempo médio desse acesso. Como instruções e dados passam pela mesma memória, eles disputam o caminho de Von Neumann. A H usa SRAM interna de um ciclo e caminhos separados para instruções e dados, então não precisa de cache para cumprir esse papel.
 
-**Caches deste computador.** O CPU-Z não está instalado aqui. Registrei o inventário de caches pela API nativa do Windows `GetLogicalProcessorInformationEx (RelationCache)`. A consulta encontrou caches L1 de instruções separados dos caches L1 de dados; as capacidades variam entre tipos de núcleo: L1 de dados de 32 ou 48 KiB, L1 de instruções de 32 ou 64 KiB, L2 unificada de 1.280 ou 2.048 KiB e L3 unificada de 12.288 KiB. Como a L1 é dividida, a CPU usa uma organização Harvard nesse nível. Como instruções e dados ainda compartilham a memória principal e o espaço de endereçamento, a classificação do computador completo é Harvard modificada.
+**Caches deste computador.** O CPU-Z não está instalado aqui. Registrei o inventário de caches pela API nativa do Windows `GetLogicalProcessorInformationEx (RelationCache)`. A consulta encontrou caches L1 separados para instruções e dados. As capacidades variam entre os tipos de núcleo. A L1 de dados tem 32 ou 48 KiB, enquanto a L1 de instruções tem 32 ou 64 KiB. A L2 unificada tem 1.280 ou 2.048 KiB e a L3 unificada tem 12.288 KiB. Como a L1 é dividida, a CPU usa uma organização Harvard nesse nível. Como instruções e dados compartilham a memória principal e o espaço de endereçamento, o computador completo segue uma organização Harvard modificada.
 
 ![Inventário das caches consultado no Windows](img/cache_windows.png)
 
@@ -65,11 +65,11 @@ As dependências RAW entre instruções do trecho são:
 | 3 `lw x7, 0(x11)` | 4 `sub x6, x6, x7` | x7 | O `sub` subtrai a amostra antiga carregada. |
 | 4 `sub x6, x6, x7` | 5 `sw x6, 0(x12)` | x6 | O `sw` grava a soma atualizada. |
 
-O `add` também lê o valor anterior de x6, que vem da iteração anterior do loop; essa dependência atravessa amostras e não é uma RAW entre duas instruções deste trecho.
+O `add` também lê o valor anterior de x6, que vem da iteração anterior do loop. Essa dependência atravessa amostras e não é uma RAW entre duas instruções deste trecho.
 
-No diagrama, `F=IF`, `D=ID`, `X=EX`, `M=MEM`, `W=WB` e `.` indica ciclo sem estágio para aquela instrução. Um estágio repetido representa uma instrução parada. O banco escreve na primeira metade do ciclo e lê na segunda metade; por isso uma instrução pode ler no ciclo em que a produtora faz WB.
+No diagrama, `F=IF`, `D=ID`, `X=EX`, `M=MEM`, `W=WB` e `.` indicam um ciclo sem estágio para aquela instrução. Um estágio repetido representa uma instrução parada. O banco escreve na primeira metade do ciclo e lê na segunda metade. Por isso, uma instrução pode ler no ciclo em que a produtora faz WB.
 
-**Sem forwarding.** As consumidoras esperam os valores chegarem a WB: cada uma das dependências 1→2, 2→4 e 4→5 acrescenta duas bolhas. São seis ciclos de bolha; o trecho termina no WB da instrução 7, no ciclo 17.
+**Sem forwarding.** As consumidoras esperam os valores chegarem a WB. Cada uma das dependências 1→2, 2→4 e 4→5 acrescenta duas bolhas. No total, são seis ciclos de bolha. O trecho termina no WB da instrução 7, no ciclo 17.
 
 ```text
 ciclo  01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17
@@ -105,7 +105,7 @@ I7 x11 .  .  .  .  .  .  .  .  F  D  X  M  W
 6. `sw x6, 0(x12)`
 7. `addi x11, x11, 4`
 
-A atualização de x11 pode ocorrer depois do `sw`, pois o endereço do `sw` usa x12. As cargas acontecem antes de seus ponteiros avançarem. O forwarding cobre a dependência entre `add` e `sub` e leva o resultado do `sub` ao dado do `sw`. Não há bolhas; o último WB ocorre no ciclo 11.
+A atualização de x11 pode ocorrer depois do `sw`, pois o endereço do `sw` usa x12. As cargas acontecem antes de seus ponteiros avançarem. O forwarding cobre a dependência entre `add` e `sub` e leva o resultado do `sub` ao dado do `sw`. A nova ordem não tem bolhas. O último WB ocorre no ciclo 11.
 
 ```text
 ciclo   01 02 03 04 05 06 07 08 09 10 11
@@ -120,30 +120,21 @@ I7 x11 .  .  .  .  .  .  F  D  X  M  W
 
 ### A3. Processos e threads
 
-Na Plataforma V, manteria leitura, processamento e acionamento do motor como threads do mesmo processo de tempo real. Elas compartilham as amostras sem IPC e têm custo baixo de criação e troca de contexto; também permitem que o processamento e a vibração usem os mesmos buffers. O BLE ficaria em um processo separado, com IPC para receber comandos e enviar logs. O custo de uma fronteira de processo é adequado para esse tráfego menos urgente e isola a tarefa que recebe dados externos.
+Na Plataforma V, manteria leitura, processamento e acionamento do motor como threads do mesmo processo de tempo real. Elas compartilham as amostras sem IPC e têm baixo custo de criação e troca de contexto. Assim, processamento e vibração também usam os mesmos buffers. O BLE ficaria em um processo separado, com IPC para receber comandos e enviar logs. O custo dessa fronteira é adequado para o tráfego menos urgente e isola a tarefa que recebe dados externos.
 
 Se uma falha no BLE for explorada, um processo separado limita o acesso à memória e permite encerrar ou reiniciar o módulo sem derrubar a leitura e a vibração. Como thread do processo principal, o módulo compartilharia o espaço de endereçamento e poderia corromper o estado da amostra ou parar o processo inteiro.
 
 ```text
-                 preempção / fim do quantum
-              +-------------------------------+
-              |                               v
-         +---------+     despacho       +-------------+
-         | Pronto  | -----------------> | Executando  | -----> Terminado
-         +---------+                    +-------------+
-              ^                              |
-              |         evento concluído     | espera por sensor/timer
-              +------------------------------v
-                                        +-----------+
-                                        | Bloqueado |
-                                        +-----------+
+[Novo] --admissao--> [Pronto] --despacho--> [Executando] --fim--> [Terminado]
+[Executando] --preempcao--> [Pronto]
+[Executando] --espera por sensor/timer--> [Bloqueado] --evento concluido--> [Pronto]
 ```
 
 A thread do sensor passa a maior parte do tempo bloqueada à espera da interrupção ou do timer da próxima amostra de 10 ms. Ao chegar o evento, ela passa para pronta e executa a leitura brevemente.
 
 ### A4. Código com semáforos
 
-O N utilizado é 5. Cada execução processa 20.000 IDs, de 0 a 19.999. A perda é o número de IDs esperados que não apareceram; duplicadas são ocorrências extras de IDs já vistos. “Consumidas” conta todas as leituras válidas, incluindo repetidas.
+O N utilizado é 5. Cada execução processa 20.000 IDs, de 0 a 19.999. A perda é o número de IDs esperados que não apareceram. Duplicadas são ocorrências extras de IDs já vistos. “Consumidas” conta todas as leituras válidas, incluindo as repetidas.
 
 | Versão | Execução | Consumidas | Perdidas | Duplicadas | Travou |
 |---|---:|---:|---:|---:|---|
@@ -157,7 +148,7 @@ O N utilizado é 5. Cada execução processa 20.000 IDs, de 0 a 19.999. A perda 
 | 3, mutex antes de vazio | 2 | 0 | 20.000 | 0 | Sim |
 | 3, mutex antes de vazio | 3 | 0 | 20.000 | 0 | Sim |
 
-Uma execução de cada versão:
+As imagens mostram a saída de uma execução por versão. O arquivo `execucoes_a4.txt` reúne as saídas das nove execuções.
 
 ![Saída da versão 1 sem sincronização](img/print_versao1.png)
 
@@ -165,7 +156,7 @@ Uma execução de cada versão:
 
 ![Saída da versão 3 com a ordem invertida](img/print_versao3.png)
 
-Na versão 1, a região crítica inclui a leitura e atualização de `occupied` e a operação correspondente no buffer e nos índices. Sem exclusão mútua, produtor e consumidor podem ler o mesmo valor antigo, ceder a CPU em `time.sleep(0)` e gravar atualizações incompatíveis. O contador deixa de representar o número real de posições ocupadas; o produtor pode sobrescrever dados ainda não lidos e o consumidor pode encontrar IDs repetidos. As três rodadas mostram perdas e duplicações.
+Na versão 1, a região crítica inclui a leitura e atualização de `occupied` e a operação correspondente no buffer e nos índices. Sem exclusão mútua, produtor e consumidor podem ler o mesmo valor antigo, ceder a CPU em `time.sleep(0)` e gravar atualizações incompatíveis. O contador deixa de representar o número real de posições ocupadas. Com isso, o produtor pode sobrescrever dados ainda não lidos e o consumidor pode encontrar IDs repetidos. As três rodadas mostram perdas e duplicações.
 
 Na versão 2:
 
@@ -173,15 +164,15 @@ Na versão 2:
 - `cheio` começa em 0 e impede o consumidor de ler quando não há amostra.
 - `mutex` começa em 1 e protege o buffer e os índices durante cada leitura ou escrita.
 
-As três rodadas consumiram os 20.000 IDs exatamente uma vez. Na versão 3, o produtor adquire `mutex` enquanto o buffer está cheio e depois espera por `vazio`. O consumidor já pode retirar um token de `cheio`, mas fica esperando o mesmo `mutex`; sem o consumidor liberar uma posição, o produtor também não prossegue. As três execuções ficaram travadas antes da primeira leitura.
+As três rodadas consumiram os 20.000 IDs exatamente uma vez. Na versão 3, o produtor adquire `mutex` enquanto o buffer está cheio e depois espera por `vazio`. O consumidor já pode retirar um token de `cheio`, mas fica esperando pelo mesmo `mutex`. Como não consegue liberar uma posição, o produtor também não prossegue. As três execuções ficaram travadas antes da primeira leitura.
 
 ### A5. Deadlock
 
 Uma sequência possível é:
 
-1. `thread_sensor` executa P(i2c), lê o sensor e mantém i2c; depois pede log.
-2. `thread_log` executa P(log), lê o arquivo e mantém log; depois pede ble.
-3. `thread_config` executa P(ble), recebe o comando e mantém ble; depois pede i2c.
+1. `thread_sensor` executa P(i2c), lê o sensor e mantém i2c. Depois, pede log.
+2. `thread_log` executa P(log), lê o arquivo e mantém log. Depois, pede ble.
+3. `thread_config` executa P(ble), recebe o comando e mantém ble. Depois, pede i2c.
 4. As três ficam bloqueadas, cada uma esperando um recurso retido pela próxima.
 
 Grafo de alocação naquele instante:
@@ -194,17 +185,17 @@ As quatro condições necessárias aparecem assim:
 
 1. **Exclusão mútua:** cada semáforo protege um recurso exclusivo: i2c, log ou ble.
 2. **Posse e espera:** cada thread segura o primeiro recurso enquanto pede o segundo.
-3. **Não preempção:** o recurso só é liberado quando a thread executa V; outra thread não o toma à força.
+3. **Não preempção:** o recurso só é liberado quando a thread executa V. Outra thread não o toma à força.
 4. **Espera circular:** sensor espera log, log espera ble e config espera i2c, fechando o ciclo.
 
-**Correção preventiva — ordem global.** Definir a ordem i2c < log < ble e exigir que todas as threads adquiram recursos nessa ordem. `thread_config` passaria a pedir i2c antes de ble. Como nenhum fluxo pode voltar a um recurso anterior da ordem, o ciclo deixa de existir. Para a pessoa, a leitura e a vibração continuam; um comando BLE pode aguardar a aquisição do i2c por alguns milissegundos.
+**Correção preventiva: ordem global.** Definir uma ordem de aquisição, i2c < log < ble, e exigir que todas as threads a sigam. `thread_config` passaria a pedir i2c antes de ble. Como nenhum fluxo pode voltar a um recurso anterior da ordem, o ciclo deixa de existir. A leitura e a vibração continuam. Um comando BLE pode aguardar alguns milissegundos pela aquisição do i2c.
 
-**Detecção e recuperação — prazo com rollback.** Fazer cada aquisição bloqueante ter um prazo, por exemplo 100 ms. Ao expirar, a thread abandona a operação, libera na ordem inversa todos os recursos que ela própria adquiriu e tenta de novo com atraso curto; o evento fica registrado para diagnóstico. Assim, uma combinação que formaria deadlock não congela a pulseira indefinidamente. O usuário pode perceber atraso ou repetição de um comando de configuração, enquanto a leitura prioritária e a vibração permanecem disponíveis.
+**Detecção e recuperação: grafo de espera e cancelamento cooperativo.** Um supervisor registra os recursos que cada thread possui e solicita. Ao encontrar um ciclo no grafo de espera, ele cancela a transação BLE, que tem menor prioridade. As esperas por semáforo usam períodos de até 100 ms para verificar o cancelamento. A thread de configuração desfaz a operação e libera os recursos que possui em um bloco finally, na ordem inversa. Isso libera BLE e permite que o log e o sensor terminem. A pessoa pode ter de repetir um comando de configuração. A leitura e a vibração continuam, sem exigir o reinício da pulseira.
 
-## Parte B — decisão do CTO
+## Parte B: decisão do CTO
 
 **Decido produzir a pulseira com a Plataforma H e o DSP.** O custo de hardware será R$ 37 por unidade, R$ 33 abaixo da Plataforma V, e o cálculo da A1 reduz o tempo estimado de 4,375 ms para 2,275 ms por amostra, deixando 2,725 ms de margem até o limite de 5 ms.
 
 Abro mão de atualizações OTA: a equipe de assistência e quem precisar de uma correção terão de levar a pulseira para atualizar por cabo. Em troca, a execução não depende de um escalonador Linux no caminho crítico e o produto evita a superfície de ataque adicional de um sistema operacional completo. BLE e comandos externos ainda exigirão validação e firmware assinado.
 
-Para a pessoa que usa a pulseira, a decisão favorece vibração previsível e menor custo, mas pode prolongar a exposição a uma falha corrigível por software até a visita à assistência. Eu mudaria a decisão se um ensaio de 200.000 amostras, sob os extremos especificados de temperatura e tensão, registrasse qualquer amostra acima de 5 ms; nesse caso, suspenderia a produção H e qualificaria a Plataforma V com escalonamento de tempo real medido.
+Para a pessoa que usa a pulseira, a decisão favorece vibração previsível e menor custo, mas pode prolongar a exposição a uma falha corrigível por software até a visita à assistência. Eu mudaria a decisão se um ensaio de 200.000 amostras a 100 Hz, com BLE enviando logs e recebendo comandos, registrasse qualquer amostra acima de 5 ms. Nesse caso, suspenderia a produção H e qualificaria a Plataforma V com escalonamento de tempo real medido.

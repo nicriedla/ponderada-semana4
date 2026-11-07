@@ -46,7 +46,7 @@ def run_once(sample_count: int = TOTAL_SAMPLES, buffer_size: int = N) -> dict[st
         """Adquira mutex antes de espaço e bloqueie quando o buffer encher.
 
         Parâmetros: nenhum. Retorno: None.
-        Funcionamento: executa P(mutex) seguido de P(empty); com o buffer
+        Funcionamento: executa P(mutex) seguido de P(empty). Com o buffer
         cheio, fica bloqueado enquanto ainda mantém mutex.
         """
         nonlocal write_index

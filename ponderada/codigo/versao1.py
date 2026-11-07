@@ -71,7 +71,7 @@ def run_once(sample_count: int = TOTAL_SAMPLES, buffer_size: int = N) -> dict[st
 
         Parâmetros: nenhum. Retorno: None.
         Funcionamento: lê do buffer, altera occupied sem mutex e registra os
-        IDs recebidos; encerra ao detectar o limite de inatividade.
+        IDs recebidos. Encerra ao detectar o limite de inatividade.
         """
         nonlocal occupied, read_index
         last_received = time.monotonic()
