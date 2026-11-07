@@ -138,7 +138,7 @@ O N utilizado é 5. Cada execução processa 20.000 IDs, de 0 a 19.999. A perda 
 
 | Versão | Execução | Consumidas | Perdidas | Duplicadas | Travou |
 |---|---:|---:|---:|---:|---|
-| 1, sem sincronização | 1 | 19.726 | 1.320 | 1.046 | Não |
+| 1, sem sincronização | 1 | 21.076 | 909 | 1.985 | Não |
 | 1, sem sincronização | 2 | 20.300 | 991 | 1.291 | Não |
 | 1, sem sincronização | 3 | 19.637 | 829 | 466 | Não |
 | 2, semáforos na ordem segura | 1 | 20.000 | 0 | 0 | Não |

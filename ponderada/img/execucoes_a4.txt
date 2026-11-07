@@ -1,6 +1,6 @@
 Run 1 - Versao 1
 Versao 1 | sem sincronizacao | N=5 | amostras=20.000
-consumidas=19726 perdidas=1320 duplicadas=1046 travou=False
+consumidas=21076 perdidas=909 duplicadas=1985 travou=False
 Run 2 - Versao 1
 Versao 1 | sem sincronizacao | N=5 | amostras=20.000
 consumidas=20300 perdidas=991 duplicadas=1291 travou=False
