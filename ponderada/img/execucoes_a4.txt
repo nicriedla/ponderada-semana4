@@ -1,0 +1,27 @@
+Run 1 - Versao 1
+Versao 1 | sem sincronizacao | N=5 | amostras=20.000
+consumidas=19726 perdidas=1320 duplicadas=1046 travou=False
+Run 2 - Versao 1
+Versao 1 | sem sincronizacao | N=5 | amostras=20.000
+consumidas=20300 perdidas=991 duplicadas=1291 travou=False
+Run 3 - Versao 1
+Versao 1 | sem sincronizacao | N=5 | amostras=20.000
+consumidas=19637 perdidas=829 duplicadas=466 travou=False
+Run 1 - Versao 2
+Versao 2 | semaforos na ordem segura | N=5 | amostras=20.000
+consumidas=20000 perdidas=0 duplicadas=0 travou=False
+Run 2 - Versao 2
+Versao 2 | semaforos na ordem segura | N=5 | amostras=20.000
+consumidas=20000 perdidas=0 duplicadas=0 travou=False
+Run 3 - Versao 2
+Versao 2 | semaforos na ordem segura | N=5 | amostras=20.000
+consumidas=20000 perdidas=0 duplicadas=0 travou=False
+Run 1 - Versao 3
+Versao 3 | produtor espera mutex antes de vazio | N=5 | amostras=20.000
+consumidas=0 perdidas=20000 duplicadas=0 travou=True
+Run 2 - Versao 3
+Versao 3 | produtor espera mutex antes de vazio | N=5 | amostras=20.000
+consumidas=0 perdidas=20000 duplicadas=0 travou=True
+Run 3 - Versao 3
+Versao 3 | produtor espera mutex antes de vazio | N=5 | amostras=20.000
+consumidas=0 perdidas=20000 duplicadas=0 travou=True
